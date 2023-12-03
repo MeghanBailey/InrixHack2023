@@ -56,10 +56,11 @@
 
     <div>
         <label for="startAddress">Enter Starting Address:</label>
-        <input type="text" id="startAddress" value="e.g., 1600 Amphitheatre Parkway, Mountain View, CA">
+        <input type="text" id="startAddress" value="e.g., 1409 Sutter Street, San Francisco, CA, USA">  <!-- 1600 Amphitheatre Parkway, Mountain View, CA -->
         <label for="endAddress">Enter Ending Address:</label>
-        <input type="text" id="endAddress" value="e.g., 123 Main Street, City, State">
-        <button onclick="geocodeAddresses()">Geocode</button>
+        <input type="text" id="endAddress" value="e.g., 2124 Union Street, San Francisco, CA, USA">  <!-- 1600 Amphitheatre Parkway, Mountain View, CA -->
+        <button onclick="geocodeAddresses()" href="">Geocode</button>
+        <a></a>
     </div>
 
     <script>
@@ -67,6 +68,8 @@
         var map;
         var startMarker;
         var endMarker;
+        var startLatLong;
+        var endLatLong;
 
         function initialize() {
             geocoder = new google.maps.Geocoder();
@@ -88,25 +91,47 @@
         }
 
         function geocodeAddresses() {
+            //Clear existing markers before geocoding new addresses
+            clearMarkers();
+
             var startAddress = document.getElementById('startAddress').value;
             var endAddress = document.getElementById('endAddress').value;
 
             geocodeAddress(startAddress, 'startAddress');
             geocodeAddress(endAddress, 'endAddress');
+
+
+            // Fetch the API token
+            var routeId
+            fetch('/getRoutes/'+startLatLong[0]+'/'+startLatLong[1]+'/'+endLatLong[0]+'/'+endLatLong[1])
+                //Parse the response as JSON
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data['result']['trip']['tripId']);
+                    routeId = data['result']['trip']['tripId'];
+
+                    fetch('/getDrawnRoute/'+routeId)
+                        //Parse the response as JSON
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log(data);
+                        })
+                        .catch(error => console.error('Error fetching API routes:', error));
+                    // console.log(data['result']);
+                })
+                .catch(error => console.error('Error fetching API routes:', error));
+            console.log(routeId)
         }
 
+
+
         function geocodeAddress(address, addressType) {
+            // var latlng_return = [0, 0];
             geocoder.geocode({ 'address': address }, function (results, status) {
                 if (status == 'OK') {
                     var location = results[0].geometry.location;
                     var latlng = [location.lat(), location.lng()];
-
-                    // Remove the existing marker if it exists
-                    //if (addressType === 'startAddress' && startMarker) {
-                    //    startMarker.setMap(null);
-                    //} else if (addressType === 'endAddress' && endMarker) {
-                    //    endMarker.setMap(null);
-                    //}
+                    console.log(latlng);
 
                     // Create a custom icon for the starting address
                     var iconUrl = addressType === 'startAddress' ? 'https://maps.google.com/mapfiles/ms/icons/green-dot.png' : undefined;
@@ -122,14 +147,27 @@
                     // Set the appropriate marker variable based on the address type
                     if (addressType === 'startAddress') {
                         startMarker = marker;
+                        startLatLong = latlng;
                     } else if (addressType === 'endAddress') {
                         endMarker = marker;
+                        endLatLong = latlng;
                     }
                 } else {
                     alert('Geocode was not successful for the following reason: ' + status);
                 }
             });
         }
+
+        function clearMarkers() {
+            // Clear existing markers
+            if (startMarker) {
+                startMarker.setMap(null);
+            }
+            if (endMarker) {
+                endMarker.setMap(null);
+            }
+        }
+
     </script>
 
 </div>

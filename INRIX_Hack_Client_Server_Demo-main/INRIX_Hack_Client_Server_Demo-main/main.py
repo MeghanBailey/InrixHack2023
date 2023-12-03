@@ -1,6 +1,7 @@
 from flask import Flask, render_template, jsonify, request
 from app.utils.auth_utils import get_token
 from flask_cors import CORS
+import requests
 
 # Create the Flask app with the template folder specified that will contain your index.html and static folder which will contain your JavaScript files
 app = Flask(__name__, template_folder='app/templates', static_url_path='/static')
@@ -26,6 +27,75 @@ def display_token():
     #If the request fails, return the error message
     else:
         return jsonify({'message': response})
+
+# /<float:startLat>/<float:startLong>/<float:endLat>/<float:endLong>
+# This is the route that will help you get the token and return it as a JSON response
+@app.route('/getRoutes/<startLat>/<startLong>/<endLat>/<endLong>', methods=['GET']) 
+def get_routes(startLat, startLong, endLat, endLong):
+    
+    # get token
+    auth_token = get_token()
+
+    headers = {
+        'Authorization': 'Bearer ' + str(auth_token)
+    }
+
+
+
+    url = 'https://api.iq.inrix.com/findRoute?wp_1='+str(startLat)+'%2C'+str(startLong)+'&wp_2='+str(endLat)+'%2C'+str(endLong)+'&format=json'
+
+     # Make the request to the INRIX token endpoint
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()  # Raise HTTPError for bad responses
+
+        data = response.json()
+        # Extract the token from the response
+        # For more info on how to parse the response, see the json_parser_example.py file
+        # token = data['result']['token']
+        return data, response.status_code
+
+    except requests.exceptions.RequestException as e:
+        return f'Request failed with error: {e}', None
+    except (KeyError, ValueError) as e:
+        return f'Error parsing JSON: {e}', None
+    
+
+# This is the route that will help you get the token and return it as a JSON response
+@app.route('/getDrawnRoute/<routeID>', methods=['GET']) 
+def get_drawn_routes(routeID):
+    
+    # get token
+    auth_token = get_token()
+
+    headers = {
+        'Authorization': 'Bearer ' + str(auth_token)
+    }
+
+    url = 'https://api.iq.inrix.com/route?routeId=' + str(routeID) + '&useTraffic=false&format=json'
+
+    # print(url)
+    # requests.get(url, headers=headers)
+
+     # Make the request to the INRIX token endpoint
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()  # Raise HTTPError for bad responses
+
+        data = response.json()
+        # Extract the token from the response
+        # For more info on how to parse the response, see the json_parser_example.py file
+        # token = data['result']['token']
+        return data, response.status_code
+
+    except requests.exceptions.RequestException as e:
+        return f'Request failed with error: {e}', None
+    except (KeyError, ValueError) as e:
+        return f'Error parsing JSON: {e}', None
+
+
+
+
 
 if __name__ == '__main__':
     app.run(debug=False, port=5000)
