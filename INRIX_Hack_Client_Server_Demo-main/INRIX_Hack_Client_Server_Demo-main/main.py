@@ -72,7 +72,8 @@ def get_drawn_routes(routeID):
         'Authorization': 'Bearer ' + str(auth_token)
     }
 
-    url = 'https://api.iq.inrix.com/route?routeId=' + str(routeID) + '&useTraffic=false&format=json'
+    url = 'https://api.iq.inrix.com/route?routeId=' + str(routeID) + '&useTraffic=false&routeOutputFields=p&format=json'
+
 
     # print(url)
     # requests.get(url, headers=headers)
