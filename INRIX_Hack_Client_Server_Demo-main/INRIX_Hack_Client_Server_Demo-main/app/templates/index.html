@@ -12,43 +12,69 @@
 
 <body onload="initialize()">
     
+    <header>
+        <h2 class="website-name">Commute Your Way</h2>
+        <p>Find the way, YOUR way</p>
+    </header>
 
-<nav class="navbar navbar-expand-lg navbar-dark" >
-    <div class="container">
-        <a class="navbar-brand" href="#">INRIX HACK 2023</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav">
-                <li class="nav-item active"><a class="nav-link" href="/getToken">GetToken</a></li>
+    <section>
+        <nav>
+            <ul>
+                <main>
+                    <h3>Where are you going?</h3> 
+                    <input type="text" id="searchBox" placeholder="Enter Starting Point">
+                    <!-- <div id="map"></div> -->
+                    <br>
+                    <input type="text" id="destinationBox" placeholder="Enter Destination"> <br> <br>
+                    <button id="searchButton">Search</button>
+                    <br> <br>
+
+                    <h3>Select Preferences:</h3>
+                    <br>
+
+                    <label for="maxSpeedDropdown">Max Speed Limit:</label>
+                    <select id="maxSpeedDropdown">
+                        <option value="option1">Select</option>
+                        <option value="option2">30-40</option>
+                        <option value="option3">40-50</option>
+                        <option value="option4">50-60</option>
+                        <option value="option5">60-70</option>
+                        <option value="option6">No Preference</option>
+                    </select>
+                    <br> <br>
+                    <label for="lightingDropdown">Lighting Conditions:</label>
+                    <select id="lightingDropdown">
+                        <option value="option1">Select</option>
+                        <option value="option2">Well Lit</option>
+                        <option value="option3">No Preference</option>
+                    </select>
+                    <br> <br>
+                    <label for="roadDropdown">Road Conditions:</label>
+                    <select id="roadDropdown">
+                        <option value="option1">Select</option>
+                        <option value="option2">Low Importance</option>
+                        <option value="option3">Medium Importance</option>
+                        <option value="option4">High Importance</option>
+                        <option value="option5">No Preference</option>
+                    </select>
+                    <br> <br>
+                    <label for="safetyDropdown">Safety Concern:</label>
+                    <select id="safetyDropdown">
+                        <option value="option1">Select</option>
+                        <option value="option2">Low</option>
+                        <option value="option3">Medium</option>
+                        <option value="option4">High</option>
+                        <option value="option5">No Preference</option>
+                    </select>
+                    <br>
+                </main>
             </ul>
-        </div>
-    </div>
-</nav>
+        </nav>
 
-<div class="container">
-    <div class="starter-template">
-        <h1 class="starter-template-heading">Hello World!!</h1><hr>
-        <p class="lead starter-template-paragraph">
-        <h6>Before starting make sure you have your APP_ID and HASH_TOKEN pasted in this directoy: <strong>INRIX_Hack_Client_Server_Demo/utils/auth_utils.py</strong> </h6>
-        <hr>
-        <ul>
-            <li>This is a client server demo project to get you started.</li>
-            <li>You can click on the <strong>getTokenlink in the navigation bar</strong>  to print the token from INRIX Api below. </li>
-            <strong>OR</strong><br>
-            <li>If you wish to see the Json response from the Flask server <strong>just type "/getToken" </strong>in the url</li>
-        </ul>
-        <!-- Container for the token -->
-        <h6>You can have a look at the starter code files to understand how we can modify dom elements and display data using plain JS</h6>
-        <hr>
-        <div id="token-container" style="max-width: 100%; overflow-x: auto;"></div>
-            <!-- This is where the token will be populated -->
-        </div>
-    </div>
-</div>
 
-<div class="container">
+</section>
+
+<article>
     <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js"></script>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCR24dvlKf_XHx1xO8sNbxwQKsvX5KgBTA&libraries=places"></script>
 
@@ -71,6 +97,7 @@
         var startLatLong;
         var endLatLong;
         var polyline;
+        var pcisfData;
 
         function initialize() {
             geocoder = new google.maps.Geocoder();
@@ -84,6 +111,7 @@
             //Enable Places Autocomplete for input fields
             enableAutoComplete('startAddress');
             enableAutoComplete('endAddress');
+            getPCISF();
         }
 
         function enableAutoComplete(inputId) {
@@ -174,6 +202,26 @@
             polyline.setMap(map);
         }
 
+        function getPCISF() {
+            fetch('/getPCI')
+                //Parse the response as JSON
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);
+                    let i = 0;
+                    pcisfData = [];
+                    while (i < data.length) {
+                        if (data[i]['pci_score'] < 55) {
+                            pcisfData.push({lat: data[i]['latitude'], lng: data[i]['longitude']});
+                        }
+                        
+                        i++;
+                    }
+                    console.log(pcisfData);
+                })
+                .catch(error => console.error('Error fetching API routes:', error));
+        }
+
 
 
         function geocodeAddress(address, addressType) {
@@ -229,10 +277,17 @@
 
     </script>
 
-</div>
+</article>
+
+<footer>
+    Commute Your Way
+    <p><a href="https://example.com" class="footer-link">Services</a></p>
+    <p><a href="https://example.com" class="footer-link">Contact Us</a></p>
+</footer>
+
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="{{ url_for('static', filename='script.js') }}"></script>
 
 </body>
-</html>
+</html> 
