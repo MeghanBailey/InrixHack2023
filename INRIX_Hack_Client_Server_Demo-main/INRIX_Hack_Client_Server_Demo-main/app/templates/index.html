@@ -111,26 +111,53 @@
                 //Parse the response as JSON
                 .then(response => response.json())
                 .then(data => {
-                    console.log(data['result']['trip']['tripId']);
-                    routeId = data['result']['trip']['tripId'];
+                    console.log(data['result']['trip']['routes']['0']['id']); //['result']['trip']['0']['tripId']
+                    console.log(data['result']['trip']['routes']['1']['id']);
+                    console.log(data['result']['trip']['routes']['2']['id']);
+                    route0 = data['result']['trip']['routes']['0']['id'];
+                    route1 = data['result']['trip']['routes']['1']['id'];
+                    route2 = data['result']['trip']['routes']['2']['id'];
+                    drawRoute(route0);
+                    drawRoute(route1);
+                    drawRoute(route2);
+                    //routeId = data['result']['trip']['0']['tripId'];
 
-                    fetch('/getDrawnRoute/'+routeId)
-                        //Parse the response as JSON
-                        .then(response => response.json())
-                        .then(data => {
-                            console.log(data);
-                            routePoints = data['result']['trip']['routes']['0']['points']['coordinates'];
-                            let i = 0;
-                            formattedPoints = [];
-                            while (i < routePoints.length) {
-                                formattedPoints.push({lat: routePoints[i][1], lng: routePoints[i][0]});
-                                i++;
-                            }
-                            console.log(formattedPoints);
-                            drawLine(formattedPoints);
-                        })
-                        .catch(error => console.error('Error fetching API routes:', error));
+                    // fetch('/getDrawnRoute/'+routeId)
+                    //     //Parse the response as JSON
+                    //     .then(response => response.json())
+                    //     .then(data => {
+                    //         console.log(data);
+                    //         routePoints = data['result']['trip']['routes']['0']['points']['coordinates'];
+                    //         let i = 0;
+                    //         formattedPoints = [];
+                    //         while (i < routePoints.length) {
+                    //             formattedPoints.push({lat: routePoints[i][1], lng: routePoints[i][0]});
+                    //             i++;
+                    //         }
+                    //         console.log(formattedPoints);
+                    //         drawLine(formattedPoints);
+                    //     })
+                    //     .catch(error => console.error('Error fetching API routes:', error));
                     // console.log(data['result']);
+                })
+                .catch(error => console.error('Error fetching API routes:', error));
+        }
+
+        function drawRoute(routeId) {
+            fetch('/getDrawnRoute/'+routeId)
+                //Parse the response as JSON
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);
+                    routePoints = data['result']['trip']['routes']['0']['points']['coordinates'];
+                    let i = 0;
+                    formattedPoints = [];
+                    while (i < routePoints.length) {
+                        formattedPoints.push({lat: routePoints[i][1], lng: routePoints[i][0]});
+                        i++;
+                    }
+                    console.log(formattedPoints);
+                    drawLine(formattedPoints);
                 })
                 .catch(error => console.error('Error fetching API routes:', error));
         }

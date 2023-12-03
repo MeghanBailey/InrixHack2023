@@ -42,7 +42,7 @@ def get_routes(startLat, startLong, endLat, endLong):
 
 
 
-    url = 'https://api.iq.inrix.com/findRoute?wp_1='+str(startLat)+'%2C'+str(startLong)+'&wp_2='+str(endLat)+'%2C'+str(endLong)+'&format=json'
+    url = 'https://api.iq.inrix.com/findRoute?wp_1='+str(startLat)+'%2C'+str(startLong)+'&wp_2='+str(endLat)+'%2C'+str(endLong)+'&maxAlternates=2&format=json'
 
      # Make the request to the INRIX token endpoint
     try:
@@ -84,6 +84,11 @@ def get_drawn_routes(routeID):
         response.raise_for_status()  # Raise HTTPError for bad responses
 
         data = response.json()
+        # route_points = data['result']['trip']['routes']['0']['points']
+        # formattedpoints = []
+        # for i in range(len(route_points)):
+        #     points = ['lat: ']
+        #     formattedpoints.append(route_points[i][j])
         # Extract the token from the response
         # For more info on how to parse the response, see the json_parser_example.py file
         # token = data['result']['token']
