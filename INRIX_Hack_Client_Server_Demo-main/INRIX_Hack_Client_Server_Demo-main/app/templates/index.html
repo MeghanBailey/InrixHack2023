@@ -13,7 +13,7 @@
 <body onload="initialize()">
     
     <header>
-        <h2 class="website-name">Commute Your Way</h2>
+        <h1 class="website-name">Stress Less</h1>
         <p>Find the way, YOUR way</p>
     </header>
 
@@ -22,24 +22,27 @@
             <ul>
                 <main>
                     <h3>Where are you going?</h3> 
-                    <input type="text" id="searchBox" placeholder="Enter Starting Point">
-                    <!-- <div id="map"></div> -->
+                    <label for="startAddress">Enter Starting Point:</label>
+                    <input type="text" id="startAddress" value="e.g., 1409 Sutter Street, San Francisco, CA, USA">
                     <br>
-                    <input type="text" id="destinationBox" placeholder="Enter Destination"> <br> <br>
-                    <button id="searchButton">Search</button>
+                    <label for="endAddress">Enter Destination:</label>
+                    <input type="text" id="endAddress" value="e.g., 2124 Union Street, San Francisco, CA, USA">
+                     <br> <br>
+                    <button id="searchButton" onclick="geocodeAddresses()">Search</button>
                     <br> <br>
 
                     <h3>Select Preferences:</h3>
                     <br>
 
                     <label for="maxSpeedDropdown">Max Speed Limit:</label>
-                    <select id="maxSpeedDropdown">
-                        <option value="option1">Select</option>
-                        <option value="option2">30-40</option>
-                        <option value="option3">40-50</option>
-                        <option value="option4">50-60</option>
-                        <option value="option5">60-70</option>
-                        <option value="option6">No Preference</option>
+                    <select id="maxSpeedDropdown" onchange="maxSpeedLimit(value)">
+                        <option value="0">Select</option>
+                        <option value="10">0-10</option>
+                        <option value="40">10-40</option>
+                        <option value="50">40-50</option>
+                        <option value="60" >50-60</option>
+                        <option value="70" >60-70</option>
+                        <option value="0" >No Preference</option>
                     </select>
                     <br> <br>
                     <label for="lightingDropdown">Lighting Conditions:</label>
@@ -66,7 +69,8 @@
                         <option value="option4">High</option>
                         <option value="option5">No Preference</option>
                     </select>
-                    <br>
+                    <br><br>
+                    <p>*Disclaimer: Only the max speed filter works due to time constraint!</p>
                 </main>
             </ul>
         </nav>
@@ -77,17 +81,10 @@
 <article>
     <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js"></script>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCR24dvlKf_XHx1xO8sNbxwQKsvX5KgBTA&libraries=places"></script>
+    <script src='https://unpkg.com/@turf/turf@6/turf.min.js'></script>
+
 
     <div id="map" style="width: 1280px; height: 720px; margin: auto;"></div>
-
-    <div>
-        <label for="startAddress">Enter Starting Address:</label>
-        <input type="text" id="startAddress" value="e.g., 1409 Sutter Street, San Francisco, CA, USA">  <!-- 1600 Amphitheatre Parkway, Mountain View, CA -->
-        <label for="endAddress">Enter Ending Address:</label>
-        <input type="text" id="endAddress" value="e.g., 2124 Union Street, San Francisco, CA, USA">  <!-- 1600 Amphitheatre Parkway, Mountain View, CA -->
-        <button onclick="geocodeAddresses()" href="">Geocode</button>
-        <a></a>
-    </div>
 
     <script>
         var geocoder;
@@ -96,8 +93,11 @@
         var endMarker;
         var startLatLong;
         var endLatLong;
-        var polyline;
+        var polylines;
         var pcisfData;
+        var possibleRoutes;
+        var max_speed;
+        var changed;
 
         function initialize() {
             geocoder = new google.maps.Geocoder();
@@ -107,11 +107,18 @@
                 center: latlng
             };
             map = new google.maps.Map(document.getElementById('map'), mapOptions);
-
+            max_speed = -1;
             //Enable Places Autocomplete for input fields
             enableAutoComplete('startAddress');
             enableAutoComplete('endAddress');
+            pcisfData = [];
             getPCISF();
+            changed = -1;
+        }
+
+        function maxSpeedLimit(maxspeed) {
+            max_speed = parseInt(maxspeed);
+            geocodeAddresses();
         }
 
         function enableAutoComplete(inputId) {
@@ -121,62 +128,57 @@
 
         function geocodeAddresses() {
             //Clear existing markers before geocoding new addresses
+            
             clearMarkers();
             clearPolyline();
-
+            polylines = [];
+            
             var startAddress = document.getElementById('startAddress').value;
             var endAddress = document.getElementById('endAddress').value;
 
-            geocodeAddress(startAddress, 'startAddress');
-            geocodeAddress(endAddress, 'endAddress');
-
-
-            // Fetch the API token
             var routeId
             var routePoints
             var formattedPoints
+
+            routePoints = [];
+            formattedPoints = [];
+
+            geocodeAddress(startAddress, 'startAddress');
+            changed = 1;
+            geocodeAddress(endAddress, 'endAddress');            
+        }
+
+        function get_routes() {
             fetch('/getRoutes/'+startLatLong[0]+'/'+startLatLong[1]+'/'+endLatLong[0]+'/'+endLatLong[1])
                 //Parse the response as JSON
                 .then(response => response.json())
                 .then(data => {
-                    console.log(data['result']['trip']['routes']['0']['id']); //['result']['trip']['0']['tripId']
-                    console.log(data['result']['trip']['routes']['1']['id']);
-                    console.log(data['result']['trip']['routes']['2']['id']);
-                    route0 = data['result']['trip']['routes']['0']['id'];
-                    route1 = data['result']['trip']['routes']['1']['id'];
-                    route2 = data['result']['trip']['routes']['2']['id'];
-                    drawRoute(route0);
-                    drawRoute(route1);
-                    drawRoute(route2);
-                    //routeId = data['result']['trip']['0']['tripId'];
+                    let i = 0;
+                    possibleRoutes = [];
+                    while (i < data['result']['trip']['routes'].length) {
+                        possibleRoutes.push(data['result']['trip']['routes'][''+i]);
+                        i++;
+                    }
 
-                    // fetch('/getDrawnRoute/'+routeId)
-                    //     //Parse the response as JSON
-                    //     .then(response => response.json())
-                    //     .then(data => {
-                    //         console.log(data);
-                    //         routePoints = data['result']['trip']['routes']['0']['points']['coordinates'];
-                    //         let i = 0;
-                    //         formattedPoints = [];
-                    //         while (i < routePoints.length) {
-                    //             formattedPoints.push({lat: routePoints[i][1], lng: routePoints[i][0]});
-                    //             i++;
-                    //         }
-                    //         console.log(formattedPoints);
-                    //         drawLine(formattedPoints);
-                    //     })
-                    //     .catch(error => console.error('Error fetching API routes:', error));
-                    // console.log(data['result']);
+                    let j = 0; 
+                    while (j < possibleRoutes.length) {
+                        if ((possibleRoutes[j]['averageSpeed']) < max_speed || max_speed == 0 || max_speed == -1) { 
+                            drawRoute(possibleRoutes[j]['id']);
+                        } else {
+                            drawDimRoute(possibleRoutes[j]['id']);
+                        }
+                        j++;
+                    }
+                    
                 })
                 .catch(error => console.error('Error fetching API routes:', error));
         }
 
-        function drawRoute(routeId) {
+        function drawDimRoute(routeId) {
             fetch('/getDrawnRoute/'+routeId)
                 //Parse the response as JSON
                 .then(response => response.json())
                 .then(data => {
-                    console.log(data);
                     routePoints = data['result']['trip']['routes']['0']['points']['coordinates'];
                     let i = 0;
                     formattedPoints = [];
@@ -184,7 +186,36 @@
                         formattedPoints.push({lat: routePoints[i][1], lng: routePoints[i][0]});
                         i++;
                     }
-                    console.log(formattedPoints);
+                    drawDimLine(formattedPoints);
+                })
+                .catch(error => console.error('Error fetching API routes:', error));
+        }
+
+        function drawDimLine(points) {
+            // Create a Google Maps Polyline using the array of points
+            let polyline = new google.maps.Polyline({
+                        path: points,
+                        geodesic: true,
+                        strokeColor: 'blue',
+                        strokeOpacity: 0.25,
+                        strokeWeight: 4
+                    });
+            polyline.setMap(map);
+            polylines.push(polyline);
+        }
+
+        function drawRoute(routeId) {
+            fetch('/getDrawnRoute/'+routeId)
+                //Parse the response as JSON
+                .then(response => response.json())
+                .then(data => {
+                    routePoints = data['result']['trip']['routes']['0']['points']['coordinates'];
+                    let i = 0;
+                    formattedPoints = [];
+                    while (i < routePoints.length) {
+                        formattedPoints.push({lat: routePoints[i][1], lng: routePoints[i][0]});
+                        i++;
+                    }
                     drawLine(formattedPoints);
                 })
                 .catch(error => console.error('Error fetching API routes:', error));
@@ -192,7 +223,7 @@
 
         function drawLine(points) {
             // Create a Google Maps Polyline using the array of points
-            polyline = new google.maps.Polyline({
+            let polyline = new google.maps.Polyline({
                         path: points,
                         geodesic: true,
                         strokeColor: 'blue',
@@ -200,6 +231,7 @@
                         strokeWeight: 4
                     });
             polyline.setMap(map);
+            polylines.push(polyline);
         }
 
         function getPCISF() {
@@ -207,7 +239,6 @@
                 //Parse the response as JSON
                 .then(response => response.json())
                 .then(data => {
-                    console.log(data);
                     let i = 0;
                     pcisfData = [];
                     while (i < data.length) {
@@ -217,20 +248,18 @@
                         
                         i++;
                     }
-                    console.log(pcisfData);
                 })
                 .catch(error => console.error('Error fetching API routes:', error));
         }
 
 
+        
 
         function geocodeAddress(address, addressType) {
-            // var latlng_return = [0, 0];
             geocoder.geocode({ 'address': address }, function (results, status) {
                 if (status == 'OK') {
                     var location = results[0].geometry.location;
                     var latlng = [location.lat(), location.lng()];
-                    console.log(latlng);
 
                     // Create a custom icon for the starting address
                     var iconUrl = addressType === 'startAddress' ? 'https://maps.google.com/mapfiles/ms/icons/green-dot.png' : undefined;
@@ -251,6 +280,12 @@
                         endMarker = marker;
                         endLatLong = latlng;
                     }
+                    if ((startLatLong != undefined && endLatLong != undefined) && changed == 1) {
+                        get_routes();
+                        if (startLatLong != undefined && endLatLong != undefined) {
+                            changed = 0;
+                        }
+                    }
                 } else {
                     alert('Geocode was not successful for the following reason: ' + status);
                 }
@@ -269,8 +304,12 @@
 
         function clearPolyline() {
             // Clear existing polyline
-            if (polyline) {
-                polyline.setMap(null);
+            if (polylines != undefined){
+                let i = 0;
+                while (i < polylines.length) {
+                    polylines[i].setMap(null);
+                    i++;
+                }
             }
         }
 

@@ -32,7 +32,6 @@ def display_token():
     else:
         return jsonify({'message': response})
 
-# /<float:startLat>/<float:startLong>/<float:endLat>/<float:endLong>
 # This is the route that will help you get the token and return it as a JSON response
 @app.route('/getRoutes/<startLat>/<startLong>/<endLat>/<endLong>', methods=['GET']) 
 def get_routes(startLat, startLong, endLat, endLong):
@@ -79,23 +78,12 @@ def get_drawn_routes(routeID):
     url = 'https://api.iq.inrix.com/route?routeId=' + str(routeID) + '&useTraffic=false&routeOutputFields=p&format=json'
 
 
-    # print(url)
-    # requests.get(url, headers=headers)
-
      # Make the request to the INRIX token endpoint
     try:
         response = requests.get(url, headers=headers)
         response.raise_for_status()  # Raise HTTPError for bad responses
 
         data = response.json()
-        # route_points = data['result']['trip']['routes']['0']['points']
-        # formattedpoints = []
-        # for i in range(len(route_points)):
-        #     points = ['lat: ']
-        #     formattedpoints.append(route_points[i][j])
-        # Extract the token from the response
-        # For more info on how to parse the response, see the json_parser_example.py file
-        # token = data['result']['token']
         return data, response.status_code
 
     except requests.exceptions.RequestException as e:
@@ -106,19 +94,6 @@ def get_drawn_routes(routeID):
 
 @app.route('/getPCI', methods=['GET'])
 def get_pcisf():
-    # This makes the call to the get_token function in the auth_utils.py file
-    # client = Socrata("data.sfgov.org", None)
-    # url = "https://data.sfgov.org/resource/5aye-4rtt.json"
-
-    # response = client.get(url, limit=2000)
-    # #    response.raise_for_status()  # Raise HTTPError for bad responses
-
-    # #     data = response.json()
-    # # results = client.get("Saye-4rtt", limit=2000)
-
-    # results_df = pd.DataFrame.from_records(response)
-    # data = results_df
-
 
     api_url = "https://data.sfgov.org/resource/5aye-4rtt.json"
 
@@ -155,15 +130,6 @@ def get_pcisf():
         return 
 
 
-    return "hi"
-    # response, status_code = get_token()
-    # # If the request is successful, return the token
-    # if status_code == 200:
-    #     api_token = response
-    #     return jsonify({'message': api_token})
-    # #If the request fails, return the error message
-    # else:
-    #     return jsonify({'message': response})
 
 
 
