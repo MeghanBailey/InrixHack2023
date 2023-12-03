@@ -7,9 +7,11 @@
     <title>Your Flask App</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css"/>
 </head>
 
-<body>
+<body onload="initialize()">
+    
 
 <nav class="navbar navbar-expand-lg navbar-dark" >
     <div class="container">
@@ -27,7 +29,7 @@
 
 <div class="container">
     <div class="starter-template">
-        <h1 class="starter-template-heading">Hello Hackers!!</h1><hr>
+        <h1 class="starter-template-heading">Hello World!!</h1><hr>
         <p class="lead starter-template-paragraph">
         <h6>Before starting make sure you have your APP_ID and HASH_TOKEN pasted in this directoy: <strong>INRIX_Hack_Client_Server_Demo/utils/auth_utils.py</strong> </h6>
         <hr>
@@ -44,6 +46,92 @@
             <!-- This is where the token will be populated -->
         </div>
     </div>
+</div>
+
+<div class="container">
+    <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCR24dvlKf_XHx1xO8sNbxwQKsvX5KgBTA&libraries=places"></script>
+
+    <div id="map" style="width: 1280px; height: 720px; margin: auto;"></div>
+
+    <div>
+        <label for="startAddress">Enter Starting Address:</label>
+        <input type="text" id="startAddress" value="e.g., 1600 Amphitheatre Parkway, Mountain View, CA">
+        <label for="endAddress">Enter Ending Address:</label>
+        <input type="text" id="endAddress" value="e.g., 123 Main Street, City, State">
+        <button onclick="geocodeAddresses()">Geocode</button>
+    </div>
+
+    <script>
+        var geocoder;
+        var map;
+        var startMarker;
+        var endMarker;
+
+        function initialize() {
+            geocoder = new google.maps.Geocoder();
+            var latlng = new google.maps.LatLng(37.755838, -122.454447);
+            var mapOptions = {
+                zoom: 12,
+                center: latlng
+            };
+            map = new google.maps.Map(document.getElementById('map'), mapOptions);
+
+            //Enable Places Autocomplete for input fields
+            enableAutoComplete('startAddress');
+            enableAutoComplete('endAddress');
+        }
+
+        function enableAutoComplete(inputId) {
+            var input = document.getElementById(inputId);
+            var autocomplete = new google.maps.places.Autocomplete(input);
+        }
+
+        function geocodeAddresses() {
+            var startAddress = document.getElementById('startAddress').value;
+            var endAddress = document.getElementById('endAddress').value;
+
+            geocodeAddress(startAddress, 'startAddress');
+            geocodeAddress(endAddress, 'endAddress');
+        }
+
+        function geocodeAddress(address, addressType) {
+            geocoder.geocode({ 'address': address }, function (results, status) {
+                if (status == 'OK') {
+                    var location = results[0].geometry.location;
+                    var latlng = [location.lat(), location.lng()];
+
+                    // Remove the existing marker if it exists
+                    //if (addressType === 'startAddress' && startMarker) {
+                    //    startMarker.setMap(null);
+                    //} else if (addressType === 'endAddress' && endMarker) {
+                    //    endMarker.setMap(null);
+                    //}
+
+                    // Create a custom icon for the starting address
+                    var iconUrl = addressType === 'startAddress' ? 'https://maps.google.com/mapfiles/ms/icons/green-dot.png' : undefined;
+
+                    // Add a new marker at the geocoded location
+                    var marker = new google.maps.Marker({
+                        map: map,
+                        position: location,
+                        icon: iconUrl
+                    });
+					
+
+                    // Set the appropriate marker variable based on the address type
+                    if (addressType === 'startAddress') {
+                        startMarker = marker;
+                    } else if (addressType === 'endAddress') {
+                        endMarker = marker;
+                    }
+                } else {
+                    alert('Geocode was not successful for the following reason: ' + status);
+                }
+            });
+        }
+    </script>
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
