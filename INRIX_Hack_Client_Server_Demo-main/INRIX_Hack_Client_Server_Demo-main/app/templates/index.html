@@ -70,6 +70,7 @@
         var endMarker;
         var startLatLong;
         var endLatLong;
+        var polyline;
 
         function initialize() {
             geocoder = new google.maps.Geocoder();
@@ -93,6 +94,7 @@
         function geocodeAddresses() {
             //Clear existing markers before geocoding new addresses
             clearMarkers();
+            clearPolyline();
 
             var startAddress = document.getElementById('startAddress').value;
             var endAddress = document.getElementById('endAddress').value;
@@ -103,6 +105,8 @@
 
             // Fetch the API token
             var routeId
+            var routePoints
+            var formattedPoints
             fetch('/getRoutes/'+startLatLong[0]+'/'+startLatLong[1]+'/'+endLatLong[0]+'/'+endLatLong[1])
                 //Parse the response as JSON
                 .then(response => response.json())
@@ -115,12 +119,32 @@
                         .then(response => response.json())
                         .then(data => {
                             console.log(data);
+                            routePoints = data['result']['trip']['routes']['0']['points']['coordinates'];
+                            let i = 0;
+                            formattedPoints = [];
+                            while (i < routePoints.length) {
+                                formattedPoints.push({lat: routePoints[i][1], lng: routePoints[i][0]});
+                                i++;
+                            }
+                            console.log(formattedPoints);
+                            drawLine(formattedPoints);
                         })
                         .catch(error => console.error('Error fetching API routes:', error));
                     // console.log(data['result']);
                 })
                 .catch(error => console.error('Error fetching API routes:', error));
-            console.log(routeId)
+        }
+
+        function drawLine(points) {
+            // Create a Google Maps Polyline using the array of points
+            polyline = new google.maps.Polyline({
+                        path: points,
+                        geodesic: true,
+                        strokeColor: 'blue',
+                        strokeOpacity: 1.0,
+                        strokeWeight: 4
+                    });
+            polyline.setMap(map);
         }
 
 
@@ -167,6 +191,14 @@
                 endMarker.setMap(null);
             }
         }
+
+        function clearPolyline() {
+            // Clear existing polyline
+            if (polyline) {
+                polyline.setMap(null);
+            }
+        }
+
 
     </script>
 
